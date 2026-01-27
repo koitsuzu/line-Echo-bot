@@ -1,0 +1,13 @@
+[project]
+name = "vibe-line"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.128.0",
+    "line-bot-sdk>=3.22.0",
+    "pyngrok>=7.5.0",
+    "python-dotenv>=1.2.1",
+    "uvicorn>=0.40.0",
+]
