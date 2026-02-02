@@ -12,3 +12,5 @@ wheels/
 # Environment Variables
 .env
 service-account.json
+credentials.json
+token.json

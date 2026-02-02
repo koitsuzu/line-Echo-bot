@@ -1,53 +1,58 @@
-# LINE Voice & Text Summarizer Bot
+# LINE 多功能 AI 摘要助手
 
-這是一個基於 FastAPI 和 `line-bot-sdk` 建立的 LINE 機器人，支援語音轉文字、自動摘要，並能將結果同步紀錄至 Notion 與 Google Sheets。由 `uv` 管理。
+這是一個功能強大的 LINE 機器人，整合了 Google Gemini 2.5-flash 的多模態分析能力，能自動處理、摘要並同步多種格式的訊息至雲端平台。
 
-## 功能特點
-- **語音轉文字**: 使用 Google Gemini 2.5-flash 精準轉錄語音內容。
-- **自動摘要**: 自動產生語音或長文字訊息的繁體中文摘要。
-- **雙平台備份**: 自動將結果存入 Notion 資料庫與 Google Sheets 試算表。
-- **分類管理**: 自動區分「語音摘要」與「文字摘要」類型。
+## 🚀 核心功能描述
 
-## 安裝
+### 1. 語音逐字稿與摘要 (`語音摘要`)
+- **功能**: 接收語音訊息 (.m4a)，自動轉錄為繁體中文逐字稿，並產生重點摘要。
+- **儲存**: 同步至 Notion 資料庫與 Google Sheets。
 
-1. 確保已安裝 Python 和 `uv`。
-2. 安裝依賴：
-   ```bash
-   uv sync
-   ```
+### 2. 長文字摘要 (`文字摘要`)
+- **功能**: 接收文字訊息，自動分析內容並回傳精簡摘要。
 
-## 環境設定
+### 3. 圖片辨識與內容分析 (`圖片摘要`)
+- **功能**: 接收圖片後，辨識圖中文字或描述場景。
+- **雲端備份**: 透過 **OAuth 2.0** 自動將圖片存至您的 **Google Drive** 特定資料夾。
 
-1. 複製 `.env.example` 為 `.env` 並填入以下資訊：
-   - `LINE_CHANNEL_ACCESS_TOKEN` & `LINE_CHANNEL_SECRET`: 從 LINE Developers Console 取得。
-   - `GEMINI_API_KEY`: 從 [Google AI Studio](https://aistudio.google.com/) 取得。
-   - `NOTION_TOKEN` & `NOTION_DATABASE_ID`: 從 Notion 整合頁面取得。
-   - `GOOGLE_SHEET_ID`: 目標 Google 試算表的 ID。
+### 4. 網頁內容摘要 (`網頁摘要`)
+- **功能**: 自動偵測訊息中的 URL，爬取一般網頁內容後產生摘要。
 
-2. **Google Sheets 設定**:
-   - 建立一個 Google Service Account 並下載 JSON 憑證金鑰。
-   - 將該金鑰檔案重新命名為 `service-account.json` 並放在專案根目錄（此檔案已被 git 忽略）。
-   - 在 Google 試算表中，將編輯權限共用給 Service Account 的 Email。
+### 5. 社群貼文分析 (`社群爬蟲`) [NEW]
+- **功能**: 偵測 Facebook 與 Instagram 連結，呼叫 **Apify Crawler** 抓取貼文內容與評論，並產出精確摘要。
+- **優勢**: 解決一般爬蟲無法讀取社群平台（如 IG/FB）內容的問題。
 
-3. **Notion 資料庫設定**:
-   - 請確保資料庫包含以下欄位：
-     - `Name`: 標題 (Title)
-     - `Content`: 純文字 (Rich Text)
-     - `Summary`: 純文字 (Rich Text)
-     - `Type`: 選項 (Select)
+---
 
-## 執行
+## 🛠️ 技術棧
+- **後端**: FastAPI (Python)
+- **AI**: Google Gemini 2.5-flash
+- **資料庫**: Notion API / Google Sheets API
+- **雲端備份**: Google Drive API (OAuth 2.0)
+- **爬蟲技術**: `httpx` + `BeautifulSoup4` & **Apify Client SDK**
 
-執行以下指令啟動伺服器：
+---
 
+## ⚙️ 環境設定與安裝
+
+### 1. 基礎安裝
 ```bash
-uv run uvicorn main:app --reload
+uv sync
 ```
 
-## 部署與測試 (使用 ngrok)
+### 2. 環境變數 (.env)
+請參考 `.env.example` 填寫：
+- `LINE_CHANNEL_ACCESS_TOKEN` / `SECRET`
+- `GEMINI_API_KEY`
+- `NOTION_TOKEN` / `DATABASE_ID`
+- `GOOGLE_SHEET_ID`
+- `GOOGLE_DRIVE_FOLDER_ID`
+- `APIFY_API_TOKEN` (用於社群爬蟲)
 
-1. 啟動 ngrok：
-   ```bash
-   uv run python start_ngrok.py
-   ```
-2. 複製輸出的 Webhook URL 並貼到 LINE Developers Console。
+---
+
+## 🎬 執行指令
+```bash
+# 啟動伺服器
+uv run uvicorn main:app --reload
+```

@@ -5,9 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "apify-client>=2.4.1",
+    "beautifulsoup4>=4.14.3",
     "fastapi>=0.128.0",
+    "google-api-python-client>=2.188.0",
+    "google-auth-httplib2>=0.3.0",
+    "google-auth-oauthlib>=1.2.4",
     "google-genai>=1.60.0",
     "gspread>=6.2.1",
+    "httpx>=0.28.1",
     "line-bot-sdk>=3.22.0",
     "notion-client>=2.7.0",
     "openai>=2.15.0",
