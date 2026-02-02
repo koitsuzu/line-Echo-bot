@@ -14,8 +14,10 @@ def main():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    user_token_json = os.getenv("GOOGLE_USER_TOKEN_JSON")
+    if user_token_json:
+        token_info = json.loads(user_token_json)
+        creds = Credentials.from_authorized_user_info(token_info, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -30,11 +32,12 @@ def main():
             flow = InstalledAppFlow.from_client_config(
                 client_config, SCOPES)
             creds = flow.run_local_server(port=0, host='127.0.0.1')
-        # Save the credentials for the next run
+        # Save the credentials for the next run (Local file still used for updates, user should manually update .env)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     
     print("Token generated successfully! Saved to token.json")
+    print("IMPORTANT: Please copy the content of token.json to GOOGLE_USER_TOKEN_JSON in your .env file.")
 
 if __name__ == '__main__':
     main()

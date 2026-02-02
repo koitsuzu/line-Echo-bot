@@ -243,12 +243,13 @@ def log_to_sheets(transcript: str, summary: str, log_type: str = "語音摘要")
 def upload_to_drive(file_path: str, filename: str):
     """Uploads a file to Google Drive using OAuth token and returns the webViewLink."""
     try:
-        # Use token.json for OAuth authentication (Uploader's identity)
-        if not os.path.exists('token.json'):
-            print("ERROR: token.json not found. Please run generate_token.py first.")
+        user_token_json = os.getenv("GOOGLE_USER_TOKEN_JSON")
+        if not user_token_json:
+            print("ERROR: GOOGLE_USER_TOKEN_JSON not found in environment variables.")
             return None
             
-        creds = UserCredentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/drive.file'])
+        token_info = json.loads(user_token_json)
+        creds = Credentials.from_authorized_user_info(token_info, ['https://www.googleapis.com/auth/drive.file'])
         service = build('drive', 'v3', credentials=creds)
         
         file_metadata = {
