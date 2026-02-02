@@ -21,8 +21,14 @@ def main():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            client_secrets_json = os.getenv("GOOGLE_CLIENT_SECRETS_JSON")
+            if not client_secrets_json:
+                print("ERROR: GOOGLE_CLIENT_SECRETS_JSON not found in environment variables.")
+                return
+            
+            client_config = json.loads(client_secrets_json)
+            flow = InstalledAppFlow.from_client_config(
+                client_config, SCOPES)
             creds = flow.run_local_server(port=0, host='127.0.0.1')
         # Save the credentials for the next run
         with open('token.json', 'w') as token:

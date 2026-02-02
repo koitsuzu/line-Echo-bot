@@ -221,8 +221,13 @@ def log_to_sheets(transcript: str, summary: str, log_type: str = "語音摘要")
     """Logs the transcript and summary to the Google Sheet."""
     print(f"DEBUG: Attempting to log to Google Sheets. Sheet_ID: {gs_id}, Type: {log_type}")
     try:
-        scope = ["https://www.googleapis.com/auth/spreadsheets"]
-        creds = ServiceAccountCredentials.from_service_account_file("service-account.json", scopes=scope)
+        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if not service_account_json:
+            print("ERROR: GOOGLE_SERVICE_ACCOUNT_JSON not found in environment variables.")
+            return
+
+        service_account_info = json.loads(service_account_json)
+        creds = ServiceAccountCredentials.from_service_account_info(service_account_info, scopes=scope)
         gc = gspread.authorize(creds)
         sh = gc.open_by_key(gs_id)
         wks = sh.get_worksheet(0) # 第一張工作表
