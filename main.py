@@ -221,13 +221,17 @@ def log_to_sheets(transcript: str, summary: str, log_type: str = "語音摘要")
     """Logs the transcript and summary to the Google Sheet."""
     print(f"DEBUG: Attempting to log to Google Sheets. Sheet_ID: {gs_id}, Type: {log_type}")
     try:
-        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-        if not service_account_json:
-            print("ERROR: GOOGLE_SERVICE_ACCOUNT_JSON not found in environment variables.")
-            return
-
-        service_account_info = json.loads(service_account_json)
-        creds = ServiceAccountCredentials.from_service_account_info(service_account_info, scopes=scope)
+        scope = ["https://www.googleapis.com/auth/spreadsheets"]
+        # Priority: Environment variable then file
+        sa_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if sa_json:
+            print("DEBUG: Using Service Account from environment variable.")
+            info = json.loads(sa_json)
+            creds = ServiceAccountCredentials.from_service_account_info(info, scopes=scope)
+        else:
+            print("DEBUG: Using Service Account from file.")
+            creds = ServiceAccountCredentials.from_service_account_file("service-account.json", scopes=scope)
+        
         gc = gspread.authorize(creds)
         sh = gc.open_by_key(gs_id)
         wks = sh.get_worksheet(0) # 第一張工作表
@@ -243,13 +247,29 @@ def log_to_sheets(transcript: str, summary: str, log_type: str = "語音摘要")
 def upload_to_drive(file_path: str, filename: str):
     """Uploads a file to Google Drive using OAuth token and returns the webViewLink."""
     try:
-        user_token_json = os.getenv("GOOGLE_USER_TOKEN_JSON")
-        if not user_token_json:
-            print("ERROR: GOOGLE_USER_TOKEN_JSON not found in environment variables.")
+        # Priority: Environment variable then file
+        token_json = os.getenv('GOOGLE_USER_TOKEN_JSON')
+        scopes = ['https://www.googleapis.com/auth/drive.file']
+        
+        if token_json:
+            print("DEBUG: Using User Token from environment variable.")
+            token_info = json.loads(token_json)
+            creds = UserCredentials.from_authorized_user_info(token_info, scopes)
+        elif os.path.exists('token.json'):
+            print("DEBUG: Using User Token from file.")
+            creds = UserCredentials.from_authorized_user_file('token.json', scopes)
+        else:
+            print("ERROR: User credentials not found in environment or file.")
             return None
             
-        token_info = json.loads(user_token_json)
-        creds = Credentials.from_authorized_user_info(token_info, ['https://www.googleapis.com/auth/drive.file'])
+        # Refresh token if expired
+        if creds and creds.expired and creds.refresh_token:
+            print("DEBUG: Token expired, refreshing...")
+            from google.auth.transport.requests import Request as AuthRequest
+            creds.refresh(AuthRequest())
+            # NOTE: Updated creds are in memory. 
+            # In a production environment, you might want to save them back if possible.
+        
         service = build('drive', 'v3', credentials=creds)
         
         file_metadata = {
