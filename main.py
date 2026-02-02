@@ -22,6 +22,28 @@ import httpx
 from bs4 import BeautifulSoup
 from apify_client import ApifyClient
 
+def safe_load_json(var_name: str):
+    """載入環境變數中的 JSON，並特別處理 Service Account 的私鑰換行問題。"""
+    val = os.getenv(var_name)
+    if not val:
+        return None
+    
+    # 移除頭尾可能的引號（有些環境會自動加）
+    val = val.strip()
+    if (val.startswith("'") and val.endswith("'")) or (val.startswith('"') and val.endswith('"')):
+        val = val[1:-1].strip()
+        
+    try:
+        data = json.loads(val)
+        # 關鍵修正：環境變數中的 \n 常常會被轉義成 \\n，這會導致 Google Auth 無法解析 PEM
+        if isinstance(data, dict) and 'private_key' in data:
+            data['private_key'] = data['private_key'].replace('\\n', '\n')
+            print(f"DEBUG: {var_name} private_key fixed (replaced \\\\n with \\n)")
+        return data
+    except Exception as e:
+        print(f"ERROR: 解析環境變數 {var_name} 失敗: {e}")
+        return None
+
 # Load environment variables
 load_dotenv()
 
@@ -223,10 +245,9 @@ def log_to_sheets(transcript: str, summary: str, log_type: str = "語音摘要")
     try:
         scope = ["https://www.googleapis.com/auth/spreadsheets"]
         # Priority: Environment variable then file
-        sa_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
-        if sa_json:
-            print("DEBUG: Using Service Account from environment variable.")
-            info = json.loads(sa_json)
+        info = safe_load_json('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if info:
+            print("DEBUG: Using Service Account from environment variable (with key fix).")
             creds = ServiceAccountCredentials.from_service_account_info(info, scopes=scope)
         else:
             print("DEBUG: Using Service Account from file.")
@@ -248,12 +269,11 @@ def upload_to_drive(file_path: str, filename: str):
     """Uploads a file to Google Drive using OAuth token and returns the webViewLink."""
     try:
         # Priority: Environment variable then file
-        token_json = os.getenv('GOOGLE_USER_TOKEN_JSON')
         scopes = ['https://www.googleapis.com/auth/drive.file']
         
-        if token_json:
+        token_info = safe_load_json('GOOGLE_USER_TOKEN_JSON')
+        if token_info:
             print("DEBUG: Using User Token from environment variable.")
-            token_info = json.loads(token_json)
             creds = UserCredentials.from_authorized_user_info(token_info, scopes)
         elif os.path.exists('token.json'):
             print("DEBUG: Using User Token from file.")
